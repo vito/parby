@@ -16,6 +16,7 @@ module Parby
         tok = token
         unexpected c, tok if tok != c
       end
+
       str
     end
 
@@ -26,9 +27,25 @@ module Parby
         result = yield
       rescue ParseError => err
         @position = pos
+        return :fail
       end
 
       result
+    end
+
+    def choice *parsers
+      before = @position
+
+      parsers.each do |p|
+        begin
+          res = p.call
+          return res unless res == :fail
+        rescue ParseError
+          fail :consumed, "Choice failed and consumed input." if @position != before
+        end
+      end
+
+      fail :choice, "No choices parsed successfully."
     end
 
     def many

@@ -33,11 +33,29 @@ class ParbyTest < Test::Unit::TestCase
     target = Parby::Parser.new "foo"
 
     failure = target.parse { try { string "fou" } }
-    assert_nil failure
+    assert_equal :fail, failure
     assert_equal target.position, 0
 
     success = target.parse { try { string "foo" } }
     assert_equal success, "foo"
     assert_equal target.position, 3
+  end
+
+  def test_choice
+    assert_raise Parby::ParseError, do
+      "foo".parse do
+        choice ->{ string "foa" },
+               ->{ string "foo" }
+      end
+    end
+
+    assert_nothing_raised do
+      match = "foo".parse do
+        choice ->{ try { string "foa" } },
+               ->{ string "foo" }
+      end
+
+      assert_equal match, "foo"
+    end
   end
 end
