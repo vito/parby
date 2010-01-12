@@ -17,7 +17,7 @@ module Parby
       @state = nil
     end
 
-    def run &block
+    def parse &block
       instance_eval &block if block_given?
     end
 
@@ -44,6 +44,6 @@ end
 class String
   def parse &block
     parser = Parby::Parser.new self
-    parser.run &block
+    parser.parse &block
   end
 end

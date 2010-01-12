@@ -32,11 +32,11 @@ class ParbyTest < Test::Unit::TestCase
   def test_try
     target = Parby::Parser.new "foo"
 
-    failure = target.run { try { string "fou" } }
+    failure = target.parse { try { string "fou" } }
     assert_nil failure
     assert_equal target.position, 0
 
-    success = target.run { try { string "foo" } }
+    success = target.parse { try { string "foo" } }
     assert_equal success, "foo"
     assert_equal target.position, 3
   end
