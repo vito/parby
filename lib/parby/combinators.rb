@@ -11,8 +11,7 @@ module Parby
 
     def string str
       str.each_char do |c|
-        unexpected c, lookahead if lookahead != c
-        pop
+        satisfy (-> tok { tok == c })
       end
 
       str
