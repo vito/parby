@@ -29,10 +29,22 @@ module Parby
       @position == @input.length
     end
 
+    def pop
+      @position += 1
+    end
+
+    def push
+      @position -= 1
+    end
+
     def token
       fail :eof, "Unexpected EOF." if eof?
-      @position += 1
+      pop
       @input[@position - 1]
+    end
+
+    def lookahead length = 1
+      @input[@position..@position + (length - 1)]
     end
 
     def fail id, message

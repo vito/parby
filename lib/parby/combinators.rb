@@ -3,18 +3,16 @@ module Parby
     def satisfy pred
       tok = token
 
-      if pred.call tok
-        tok
-      else
-        @position -= 1
-        fail :unsatisfied, "Token #{tok} failed to satisfy predicate."
-      end
+      return tok if pred.call tok
+
+      @position -= 1
+      fail :unsatisfied, "Token #{tok} failed to satisfy predicate."
     end
 
     def string str
       str.each_char do |c|
-        tok = token
-        unexpected c, tok if tok != c
+        unexpected c, lookahead if lookahead != c
+        pop
       end
 
       str

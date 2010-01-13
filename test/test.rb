@@ -56,6 +56,15 @@ class ParbyTest < Test::Unit::TestCase
       end
 
       assert_equal match, "foo"
+
+      matches = "foobarfoobarbarfoo".parse do
+        many do
+          choice ->{ string "foo" },
+                 ->{ string "bar" }
+        end
+      end
+
+      assert_equal matches, ["foo", "bar", "foo", "bar", "bar", "foo"]
     end
   end
 end
