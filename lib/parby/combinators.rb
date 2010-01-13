@@ -1,12 +1,9 @@
 module Parby
   class Parser
     def satisfy pred
-      tok = token
+      return token if pred.call lookahead
 
-      return tok if pred.call tok
-
-      @position -= 1
-      fail :unsatisfied, "Token #{tok} failed to satisfy predicate."
+      fail :unsatisfied, "Token #{lookahead} failed to satisfy predicate."
     end
 
     def string str
