@@ -45,12 +45,12 @@ module Parby
       @input[@position..@position + (length - 1)]
     end
 
-    def fail id, message
-      raise ParseError.new id, @position, message
+    def fail message, info
+      raise ParseError.new message, @position, info
     end
 
     def unexpected got, wanted
-      fail :unexpected, "Expected #{wanted}, got #{got}."
+      fail :unexpected, "Unexpected `#{got}' (wanted `#{wanted}')."
     end
   end
 end
