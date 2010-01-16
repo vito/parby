@@ -1,70 +1,102 @@
-require 'test/unit'
 require 'lib/parby'
+require 'test/helpers'
 
-class ParbyTest < Test::Unit::TestCase
-  def test_basic_token
-    char = "abc".parse do
-      token
-    end
-
-    assert_equal char, "a"
+describe Parby::Parser, "#token" do
+  it "returns a single token" do
+    "abc".parse { token }.should == "a"
   end
 
-  def test_many_token
-    chars = "abc".parse do
+  it "raises a ParseError at EOF" do
+    lambda {
+      "".parse { token }
+    }.should raise_exception(Parby::ParseError, :eof)
+  end
+end
+
+describe Parby::Parser, "#satisfy" do
+  it "returns a token that satifies a predicate" do
+    parse "123" do
+        satisfy (-> c { c =~ /[0-9]/ })
+    end.should result_in("1").position(1)
+  end
+
+  it "raises a ParseError if token does not satisfy predicate." do
+    lambda {
+      "1".parse {
+        satisfy (-> c { c =~ /[a-z]/ })
+      }
+    }.should raise_exception(Parby::ParseError, :unsatisfied)
+  end
+end
+
+describe Parby::Parser, "#many" do
+  it "continues until EOF" do
+    parse "abc" do
       many { token }
-    end
-
-    assert_equal chars.join, "abc"
+    end.should result_in(["a", "b", "c"]).position(3)
   end
 
-  def test_sequence
-    chars = "(abc)".parse do
-      string "("
-      chars = many { satisfy (-> c { c =~ /[a-z]/ }) }
-      string ")"
-      chars
-    end
+  it "continues until ParseError" do
+    parse "abc123" do
+      many { satisfy (-> c { c =~ /[a-z]/ }) }
+    end.should result_in(["a", "b", "c"]).position(3)
+  end
+end
 
-    assert_equal chars.join, "abc"
+describe Parby::Parser, "#string" do
+  it "parses a sequence of characters and returns the string if successful" do
+    parse "foobar" do
+      string "foo"
+    end.should result_in("foo").position(3)
   end
 
-  def test_try
-    target = Parby::Parser.new "foo"
+  it "consumes input on failure" do
+    target = Parby::Parser.new "foobar"
 
-    failure = target.parse { try { string "fou" } }
-    assert_equal :fail, failure
-    assert_equal target.position, 0
+    lambda {
+      lambda {
+        target.parse {
+          string "foa"
+        }
+      }.should raise_exception(Parby::ParseError, :unexpected)
+    }.should change(target, :position).from(0).to(2)
+  end
+end
 
-    success = target.parse { try { string "foo" } }
-    assert_equal success, "foo"
-    assert_equal target.position, 3
+describe Parby::Parser, "#try" do
+  it "resets position on failure" do
+    parse "foobarbaz" do
+      try { string "foa" }
+    end.should result_in(:fail).position(0)
   end
 
-  def test_choice
-    assert_raise Parby::ParseError, do
-      "foo".parse do
+  it "catches exceptions" do
+    lambda {
+      "foobarbaz".parse { try { string "foa" } }
+    }.should_not raise_exception(Parby::ParseError, :unexpected)
+  end
+
+  it "returns parse result and updates position on success" do
+    parse "foobarbaz" do
+      try { string "foo" }
+    end.should result_in("foo").position(3)
+  end
+end
+
+describe Parby::Parser, "#choice" do
+  it "returns result of first successful parse" do
+    parse "foo" do
+      choice ->{ try { string "foa" } },
+             ->{ string "foo" }
+    end.should result_in("foo").position(3)
+  end
+
+  it "fails if a branch fails and consumes input" do
+    lambda {
+      "foo".parse {
         choice ->{ string "foa" },
                ->{ string "foo" }
-      end
-    end
-
-    assert_nothing_raised do
-      match = "foo".parse do
-        choice ->{ try { string "foa" } },
-               ->{ string "foo" }
-      end
-
-      assert_equal match, "foo"
-
-      matches = "foobarfoobarbarfoo".parse do
-        many do
-          choice ->{ string "foo" },
-                 ->{ string "bar" }
-        end
-      end
-
-      assert_equal matches, ["foo", "bar", "foo", "bar", "bar", "foo"]
-    end
+      }
+    }.should raise_exception(Parby::ParseError, :consumed)
   end
 end

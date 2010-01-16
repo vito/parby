@@ -3,12 +3,17 @@ module Parby
     def satisfy pred
       return token if pred.call lookahead
 
-      fail :unsatisfied, "Token #{lookahead} failed to satisfy predicate."
+      fail :unsatisfied, "Token `#{lookahead}' failed to satisfy predicate."
     end
 
     def string str
       str.each_char do |c|
-        satisfy (-> tok { tok == c })
+        begin
+          satisfy (-> tok { tok == c })
+        rescue ParseError => e
+          unexpected lookahead, c if e.message == :unsatisfied
+          raise e
+        end
       end
 
       str
@@ -19,9 +24,9 @@ module Parby
 
       begin
         result = yield
-      rescue ParseError => err
+      rescue ParseError
+        result = :fail
         @position = pos
-        return :fail
       end
 
       result

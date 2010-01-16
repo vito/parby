@@ -1,8 +1,12 @@
 module Parby
   class ParseError < StandardError
-    attr_accessor :id, :position, :message
-    def initialize id, position, message=""
-      @id, @position, @message = id, position, message
+    attr_accessor :message, :position, :info
+    def initialize message, position, info=""
+      @message, @position, @info = message, position, info
+    end
+
+    def to_s
+      "parse error: #{message}: #{info}"
     end
   end
 
@@ -45,7 +49,7 @@ module Parby
       raise ParseError.new id, @position, message
     end
 
-    def unexpected wanted, got
+    def unexpected got, wanted
       fail :unexpected, "Expected #{wanted}, got #{got}."
     end
   end
